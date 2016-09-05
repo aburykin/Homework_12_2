@@ -2,20 +2,9 @@
 public class ContextImpl implements Context {
 
     private final ThreadPoolImpl threadPool;
-    private final Runnable callback;
 
-    public ContextImpl(Runnable callback, Runnable... tasks) {
-        this.threadPool = new ThreadPoolImpl();
-        this.callback = callback;
-        for (Runnable task : tasks) {
-            threadPool.addTask(task);
-        }
-
-        new Thread(() -> {
-            this.threadPool.start();
-            while (!this.threadPool.isFinished()) {}
-            new Thread(callback).start();
-        }).start();
+    public ContextImpl(ThreadPoolImpl threadPool) {
+        this.threadPool = threadPool;
     }
 
     @Override

@@ -1,8 +1,6 @@
-
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by ABurykin on 02.09.2016.
@@ -11,13 +9,14 @@ public class ThreadPoolImpl extends Thread {
 
     private final List<Runnable> tasks = new ArrayList();
     private final List<Thread> runningTasks = new ArrayList();
-    private volatile static int countCompletedTasks = 0;
-    private volatile static int countFailedTasks = 0;
-    private volatile static int countInterraptTasks = 0;
+    private AtomicInteger countCompletedTasks = new AtomicInteger(0);
+    private AtomicInteger countFailedTasks = new AtomicInteger(0);
+    private AtomicInteger countInterraptTasks = new AtomicInteger(0);
 
     @Override
     public void start() {
         for (Runnable task : tasks) {
+            ((Task) task).setThreadPool(this);
             Thread x = new Thread(task);
             runningTasks.add(x);
             x.start();
@@ -33,30 +32,30 @@ public class ThreadPoolImpl extends Thread {
         tasks.add(task);
     }
 
-    // методы ля работы со счетчиками
+    // методы для работы со счетчиками
 
-    public static void addCountFailedTasks() {
-        countFailedTasks++;
+    public void addCountFailedTasks() {
+        countFailedTasks.incrementAndGet();
     }
 
-    public static void addcountCompletedTasks() {
-        countCompletedTasks++;
+    public void addcountCompletedTasks() {
+        countCompletedTasks.incrementAndGet();
     }
 
     // МЕТОДЫ ДЛЯ Context
 
     public int getCompletedTaskCount() {
-        return countCompletedTasks;
+        return countCompletedTasks.get();
     }
 
 
     public int getFailedTaskCount() {
-        return countFailedTasks;
+        return countFailedTasks.get();
     }
 
 
     public int getInterruptedTaskCount() {
-        return countInterraptTasks;
+        return countInterraptTasks.get();
     }
 
 
@@ -64,13 +63,13 @@ public class ThreadPoolImpl extends Thread {
         for (Thread task : runningTasks) {
             if (task.isAlive()) {
                 task.interrupt();
-                countInterraptTasks++;
+                countInterraptTasks.incrementAndGet();
                 return;
             }
         }
     }
 
     public boolean isFinished() {
-        return (tasks.size() == (countCompletedTasks + countFailedTasks + countInterraptTasks));
+        return (tasks.size() == (getCompletedTaskCount() + getFailedTaskCount() + getInterruptedTaskCount()));
     }
 }
